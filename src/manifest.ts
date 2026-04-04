@@ -24,6 +24,18 @@ const manifest: PaperclipPluginManifestV1 = {
         id: "health-widget",
         displayName: "Department People Health",
         exportName: "DashboardWidget"
+      },
+      {
+        type: "dashboardWidget",
+        id: "onboarding-widget",
+        displayName: "Onboarding Dashboard",
+        exportName: "OnboardingWidget"
+      },
+      {
+        type: "dashboardWidget",
+        id: "policy-widget",
+        displayName: "Policy Q&A Dashboard",
+        exportName: "PolicyWidget"
       }
     ]
   }

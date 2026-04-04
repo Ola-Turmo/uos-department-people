@@ -1,4 +1,22 @@
 import { definePlugin, runWorker } from "@paperclipai/plugin-sdk";
+import { OnboardingService } from "./workflows/onboarding.js";
+import { PolicyService } from "./workflows/policy.js";
+import type {
+  CreateOnboardingParams,
+  AddOnboardingTaskParams,
+  UpdateTaskStatusParams,
+  NotifyStakeholderParams,
+  CompleteStakeholderSignoffParams,
+  GetOnboardingSummaryParams,
+  AskPolicyQuestionParams,
+  EscalatePolicyQuestionParams,
+  ResolveEscalationParams,
+  GetPolicyQuestionsReportParams,
+} from "./types/people.js";
+
+// Initialize services
+const onboardingService = new OnboardingService();
+const policyService = new PolicyService();
 
 const plugin = definePlugin({
   async setup(ctx) {
@@ -8,13 +26,249 @@ const plugin = definePlugin({
       ctx.logger.info("Observed issue.created", { issueId });
     });
 
+    // Health check
     ctx.data.register("health", async () => {
       return { status: "ok", checkedAt: new Date().toISOString() };
     });
 
+    // Ping action for testing
     ctx.actions.register("ping", async () => {
       ctx.logger.info("Ping action invoked");
       return { pong: true, at: new Date().toISOString() };
+    });
+
+    // ============================================
+    // Onboarding Actions (VAL-DEPT-PEOPLE-001)
+    // ============================================
+
+    /**
+     * Create a new onboarding workflow
+     * VAL-DEPT-PEOPLE-001
+     */
+    ctx.actions.register("onboarding.create", async (params) => {
+      const p = params as unknown as CreateOnboardingParams;
+      ctx.logger.info("Creating onboarding workflow", { employeeId: p.employeeId, name: p.name });
+      const workflow = onboardingService.createOnboarding(p);
+      return { workflow };
+    });
+
+    /**
+     * Get an onboarding workflow by ID
+     * VAL-DEPT-PEOPLE-001
+     */
+    ctx.actions.register("onboarding.get", async (params) => {
+      const p = params as unknown as { workflowId: string };
+      const workflow = onboardingService.getWorkflow(p.workflowId);
+      return { workflow: workflow ?? null };
+    });
+
+    /**
+     * Get all onboarding workflows
+     * VAL-DEPT-PEOPLE-001
+     */
+    ctx.actions.register("onboarding.getAll", async () => {
+      const workflows = onboardingService.getAllWorkflows();
+      return { workflows };
+    });
+
+    /**
+     * Get workflows by employee ID
+     * VAL-DEPT-PEOPLE-001
+     */
+    ctx.actions.register("onboarding.getByEmployee", async (params) => {
+      const p = params as unknown as { employeeId: string };
+      const workflows = onboardingService.getWorkflowsByEmployee(p.employeeId);
+      return { workflows };
+    });
+
+    /**
+     * Get workflows by status
+     * VAL-DEPT-PEOPLE-001
+     */
+    ctx.actions.register("onboarding.getByStatus", async (params) => {
+      const p = params as unknown as { status: "not-started" | "in-progress" | "ready-day-one" | "blocked" | "completed" };
+      const workflows = onboardingService.getWorkflowsByStatus(p.status);
+      return { workflows };
+    });
+
+    /**
+     * Add a task to an onboarding workflow
+     * VAL-DEPT-PEOPLE-001
+     */
+    ctx.actions.register("onboarding.addTask", async (params) => {
+      const p = params as unknown as AddOnboardingTaskParams;
+      ctx.logger.info("Adding task to onboarding workflow", { workflowId: p.workflowId, title: p.title });
+      const task = onboardingService.addTask(p.workflowId, p);
+      return { task: task ?? null };
+    });
+
+    /**
+     * Update task status in an onboarding workflow
+     * VAL-DEPT-PEOPLE-001
+     */
+    ctx.actions.register("onboarding.updateTaskStatus", async (params) => {
+      const p = params as unknown as UpdateTaskStatusParams;
+      ctx.logger.info("Updating task status", { workflowId: p.workflowId, taskId: p.taskId, status: p.status });
+      const task = onboardingService.updateTaskStatus(p.workflowId, p);
+      return { task: task ?? null };
+    });
+
+    /**
+     * Notify a stakeholder about onboarding progress
+     * VAL-DEPT-PEOPLE-001
+     */
+    ctx.actions.register("onboarding.notifyStakeholder", async (params) => {
+      const p = params as unknown as NotifyStakeholderParams;
+      const stakeholder = onboardingService.notifyStakeholder(p.workflowId, p);
+      return { stakeholder: stakeholder ?? null };
+    });
+
+    /**
+     * Complete stakeholder signoff
+     * VAL-DEPT-PEOPLE-001
+     */
+    ctx.actions.register("onboarding.completeStakeholderSignoff", async (params) => {
+      const p = params as unknown as CompleteStakeholderSignoffParams;
+      ctx.logger.info("Completing stakeholder signoff", { workflowId: p.workflowId, roleKey: p.roleKey });
+      const stakeholder = onboardingService.completeStakeholderSignoff(p.workflowId, p);
+      return { stakeholder: stakeholder ?? null };
+    });
+
+    /**
+     * Assess readiness for an onboarding workflow
+     * VAL-DEPT-PEOPLE-001
+     */
+    ctx.actions.register("onboarding.assessReadiness", async (params) => {
+      const p = params as unknown as { workflowId: string };
+      ctx.logger.info("Assessing onboarding readiness", { workflowId: p.workflowId });
+      const readiness = onboardingService.assessReadiness(p.workflowId);
+      return { readiness: readiness ?? null };
+    });
+
+    /**
+     * Get onboarding summary statistics
+     * VAL-DEPT-PEOPLE-001
+     */
+    ctx.actions.register("onboarding.getSummary", async (params) => {
+      const p = params as unknown as GetOnboardingSummaryParams;
+      const summary = onboardingService.getSummary(p);
+      return { summary };
+    });
+
+    /**
+     * Get privacy-safe onboarding report
+     * VAL-DEPT-PEOPLE-001
+     */
+    ctx.actions.register("onboarding.getPrivacySafeReport", async (params) => {
+      const p = params as unknown as { workflowId: string; requestingRole: string };
+      const report = onboardingService.generatePrivacySafeReport(p.workflowId, p.requestingRole);
+      return { report: report ?? null };
+    });
+
+    // ============================================
+    // Policy Question Actions (VAL-DEPT-PEOPLE-002)
+    // ============================================
+
+    /**
+     * Ask a policy question
+     * VAL-DEPT-PEOPLE-002
+     */
+    ctx.actions.register("policy.ask", async (params) => {
+      const p = params as unknown as AskPolicyQuestionParams;
+      ctx.logger.info("Policy question asked", { question: p.question.substring(0, 50) });
+      const answer = policyService.askQuestion(p);
+      return { answer };
+    });
+
+    /**
+     * Get a policy answer by ID
+     * VAL-DEPT-PEOPLE-002
+     */
+    ctx.actions.register("policy.getAnswer", async (params) => {
+      const p = params as unknown as { answerId: string };
+      const answer = policyService.getAnswer(p.answerId);
+      return { answer: answer ?? null };
+    });
+
+    /**
+     * Get a policy question log by ID
+     * VAL-DEPT-PEOPLE-002
+     */
+    ctx.actions.register("policy.getQuestion", async (params) => {
+      const p = params as unknown as { questionId: string };
+      const question = policyService.getQuestion(p.questionId);
+      return { question: question ?? null };
+    });
+
+    /**
+     * Escalate a policy question to human review
+     * VAL-DEPT-PEOPLE-002
+     */
+    ctx.actions.register("policy.escalate", async (params) => {
+      const p = params as unknown as EscalatePolicyQuestionParams;
+      ctx.logger.info("Escalating policy question", { questionId: p.questionId, urgency: p.urgency });
+      const escalation = policyService.escalateQuestion(p);
+      return { escalation: escalation ?? null };
+    });
+
+    /**
+     * Get an escalation by ID
+     * VAL-DEPT-PEOPLE-002
+     */
+    ctx.actions.register("policy.getEscalation", async (params) => {
+      const p = params as unknown as { escalationId: string };
+      const escalation = policyService.getEscalation(p.escalationId);
+      return { escalation: escalation ?? null };
+    });
+
+    /**
+     * Get all pending escalations
+     * VAL-DEPT-PEOPLE-002
+     */
+    ctx.actions.register("policy.getPendingEscalations", async () => {
+      const escalations = policyService.getPendingEscalations();
+      return { escalations };
+    });
+
+    /**
+     * Get escalations by urgency
+     * VAL-DEPT-PEOPLE-002
+     */
+    ctx.actions.register("policy.getEscalationsByUrgency", async (params) => {
+      const p = params as unknown as { urgency: "routine" | "urgent" | "critical" };
+      const escalations = policyService.getEscalationsByUrgency(p.urgency);
+      return { escalations };
+    });
+
+    /**
+     * Resolve an escalation
+     * VAL-DEPT-PEOPLE-002
+     */
+    ctx.actions.register("policy.resolveEscalation", async (params) => {
+      const p = params as unknown as ResolveEscalationParams;
+      ctx.logger.info("Resolving policy escalation", { escalationId: p.escalationId, status: p.status });
+      const escalation = policyService.resolveEscalation(p);
+      return { escalation: escalation ?? null };
+    });
+
+    /**
+     * Add a note to an escalation
+     * VAL-DEPT-PEOPLE-002
+     */
+    ctx.actions.register("policy.addEscalationNote", async (params) => {
+      const p = params as unknown as { escalationId: string; note: string };
+      const escalation = policyService.addEscalationNote(p.escalationId, p.note);
+      return { escalation: escalation ?? null };
+    });
+
+    /**
+     * Generate a policy questions report
+     * VAL-DEPT-PEOPLE-002
+     */
+    ctx.actions.register("policy.generateReport", async (params) => {
+      const p = params as unknown as GetPolicyQuestionsReportParams;
+      const report = policyService.generateReport(p);
+      return { report };
     });
   },
 
