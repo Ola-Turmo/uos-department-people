@@ -1,0 +1,11 @@
+{
+  "bundleIds": [
+    "uos-people-risk"
+  ],
+  "externalSkills": [
+    {
+      "id": "uos-external-running-decisions",
+      "sourceRelativePath": "vendor/external-skills/ola-turmo/unified-skills-catalog/running-decision-processes"
+    }
+  ]
+}

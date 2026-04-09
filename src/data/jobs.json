@@ -1,0 +1,18 @@
+[
+  {
+    "jobKey": "people-hiring-review",
+    "name": "People Hiring Review",
+    "cadence": "monthly",
+    "ownerRoleKey": "people-talent-lead",
+    "projectKey": "hire-to-productivity-project",
+    "goalKey": "hire-to-productivity-goal"
+  },
+  {
+    "jobKey": "people-onboarding-review",
+    "name": "People Onboarding Review",
+    "cadence": "monthly",
+    "ownerRoleKey": "people-ops-lead",
+    "projectKey": "hire-to-productivity-project",
+    "goalKey": "hire-to-productivity-goal"
+  }
+]

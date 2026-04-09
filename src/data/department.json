@@ -1,0 +1,14 @@
+{
+  "departmentId": "people",
+  "displayName": "People Department",
+  "parentFunctionId": "people",
+  "parentExecutiveRole": "people",
+  "moduleId": null,
+  "summary": "People operations, recruiting, onboarding, and role enablement.",
+  "requiredSkillBundles": [
+    "uos-people-risk"
+  ],
+  "missionRefs": [
+    "hire-to-productivity"
+  ]
+}

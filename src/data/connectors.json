@@ -1,0 +1,22 @@
+{
+  "requiredToolkits": [
+    "gmail",
+    "googledrive",
+    "googledocs",
+    "slack"
+  ],
+  "roleToolkits": [
+    {
+      "roleKey": "people",
+      "toolkits": ["slack", "googledocs"]
+    },
+    {
+      "roleKey": "people-ops-lead",
+      "toolkits": ["googledrive", "googledocs", "slack"]
+    },
+    {
+      "roleKey": "people-talent-lead",
+      "toolkits": ["gmail", "googledocs", "slack"]
+    }
+  ]
+}
