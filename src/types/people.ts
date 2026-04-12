@@ -75,6 +75,18 @@ export interface OnboardingReadiness {
   assessedAt: string;
 }
 
+/**
+ * Prediction result from CompletionPredictor
+ */
+export interface PredictionResult {
+  score: number; // 0-100 readiness score
+  riskLevel: "low" | "medium" | "high";
+  factors: string[]; // Identified risk factors
+  recommendations: string[]; // What to do to improve
+  predictedCompletionDate?: string; // ISO date string
+  confidence: "high" | "medium" | "low";
+}
+
 export interface NewHireProfile {
   id: string;
   employeeId: string;

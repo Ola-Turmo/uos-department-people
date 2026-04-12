@@ -12,3 +12,6 @@ export * from "./types/people.js";
 // Workflows
 export { OnboardingService } from "./workflows/onboarding.js";
 export { PolicyService } from "./workflows/policy.js";
+
+// Onboarding utilities
+export { CompletionPredictor } from "./onboarding/completion-predictor.js";
