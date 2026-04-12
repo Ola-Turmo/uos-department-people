@@ -22,6 +22,8 @@ import type {
   PolicyConfidence,
   PolicyEscalationUrgency,
 } from "../types/people.js";
+import { PolicyRagEngine } from "../policy/rag-engine.js";
+import { PolicyChangeDetector } from "../policy/change-detector.js";
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
@@ -344,6 +346,8 @@ function findBestPolicyMatch(question: string): {
 
 export class PolicyService {
   private state: PolicyState;
+  private ragEngine: PolicyRagEngine;
+  private changeDetector: PolicyChangeDetector;
 
   constructor(initialState?: PolicyState) {
     this.state = initialState ?? {
@@ -352,6 +356,47 @@ export class PolicyService {
       escalations: {},
       lastUpdated: new Date().toISOString(),
     };
+    // Initialize RAG engine and index the policy knowledge base
+    this.ragEngine = new PolicyRagEngine();
+    this.ragEngine.index(POLICY_KB);
+
+    // Initialize change detector
+    this.changeDetector = new PolicyChangeDetector();
+
+    // Register callback for policy changes to flag affected answers
+    this.changeDetector.onPolicyChange((event) => {
+      this.flagAnswersBasedOnDocument(event.docId);
+    });
+  }
+
+  /**
+   * Flag all answers that are based on a specific document for review
+   */
+  private flagAnswersBasedOnDocument(docId: string): void {
+    for (const [answerId, answer] of Object.entries(this.state.answers)) {
+      const hasSource = answer.sources.some((s) => s.id === docId);
+      if (hasSource) {
+        this.changeDetector.flagAnswerForReview(
+          answerId,
+          docId,
+          `Policy document ${docId} was updated`
+        );
+      }
+    }
+  }
+
+  /**
+   * Get the change detector instance
+   */
+  getChangeDetector(): PolicyChangeDetector {
+    return this.changeDetector;
+  }
+
+  /**
+   * Get the RAG engine instance for advanced queries
+   */
+  getRagEngine(): PolicyRagEngine {
+    return this.ragEngine;
   }
 
   /**
@@ -374,33 +419,51 @@ export class PolicyService {
 
     this.state.questions[questionId] = questionLog;
 
-    // Find best matching policy
-    const match = findBestPolicyMatch(params.question);
+    // Query RAG engine for best matching policies
+    const ragResults = this.ragEngine.query(params.question, 3);
+    const bestMatch = ragResults.length > 0 ? ragResults[0] : null;
 
     let answer: PolicyAnswer;
 
-    if (match) {
-      // Build answer from matched policy
+    // Threshold of 0.1 to accept any match (original returned null only if score === 0)
+    if (bestMatch && bestMatch.relevanceScore >= 0.1) {
+      // Build answer from RAG-matched policy
+      const policy = bestMatch.document;
       const requiresEscalation =
         containsEscalationTriggers(params.question) ||
-        match.policy.escalationTriggers.some((trigger) =>
-          params.question.toLowerCase().includes(trigger)
+        policy.keywords.some((trigger) =>
+          params.question.toLowerCase().includes(trigger.toLowerCase())
         );
+
+      // Determine confidence based on relevance score
+      let confidence: PolicyConfidence = "medium";
+      let confidenceReasoning = "Moderate relevance score - answer may need context verification.";
+
+      if (bestMatch.relevanceScore >= 0.6) {
+        confidence = "high";
+        confidenceReasoning = "Strong relevance score indicating likely accurate policy match.";
+      } else if (bestMatch.relevanceScore < 0.2) {
+        confidence = "low";
+        confidenceReasoning = "Low relevance score - answer is a best-effort estimate and may not fully apply.";
+      }
+
+      // Filter sources by relevance threshold (>= 0.6)
+      const relevantSources = this.ragEngine.getRelevantSources(ragResults, 0.6);
 
       answer = {
         id: generateId(),
         question: params.question,
-        answer: match.policy.answer,
-        summary: `Policy answer based on ${match.policy.question}`,
-        confidence: match.confidence,
-        confidenceReasoning: match.confidenceReasoning,
-        sources: match.policy.sources,
-        relatedPolicies: match.policy.sources.map((s) => s.id),
-        applicabilityNotes: match.confidence === "low"
+        answer: policy.answer,
+        summary: `Policy answer based on "${policy.question || policy.title}"`,
+        confidence,
+        confidenceReasoning,
+        sources: relevantSources.length > 0 ? relevantSources : policy.sources,
+        relatedPolicies: policy.sources.map((s) => s.id),
+        applicabilityNotes: confidence === "low"
           ? "This is a best-effort answer based on partial policy match. Please verify with HR if exact compliance is required."
           : undefined,
         answeredAt: now,
-        answeredBy: "policy-knowledge-base",
+        answeredBy: "policy-rag-engine",
         requiresEscalation,
         escalationReason: requiresEscalation
           ? "Question contains escalation-triggering keywords that require human review"
@@ -420,11 +483,14 @@ export class PolicyService {
         sources: [],
         applicabilityNotes: "This question may require policy clarification or creation.",
         answeredAt: now,
-        answeredBy: "policy-knowledge-base",
+        answeredBy: "policy-rag-engine",
         requiresEscalation: true,
         escalationReason: "No policy match found - requires human review for accurate answer",
       };
     }
+
+    // Track sources with change detector and check for changes
+    this.changeDetector.trackSources(answer.sources);
 
     this.state.answers[answer.id] = answer;
     questionLog.answerId = answer.id;
@@ -438,6 +504,20 @@ export class PolicyService {
    */
   getAnswer(answerId: string): PolicyAnswer | undefined {
     return this.state.answers[answerId];
+  }
+
+  /**
+   * Check if an answer is flagged for review due to policy changes
+   */
+  isAnswerFlaggedForReview(answerId: string): boolean {
+    return this.changeDetector.isAnswerFlagged(answerId);
+  }
+
+  /**
+   * Get flagged answer info
+   */
+  getFlaggedAnswerInfo(answerId: string) {
+    return this.changeDetector.getFlaggedAnswer(answerId);
   }
 
   /**
