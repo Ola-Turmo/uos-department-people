@@ -313,6 +313,40 @@ export interface PolicyReport {
 }
 
 // ============================================
+// Skills Gap Analysis Types
+// ============================================
+
+export type ProficiencyLevel = "beginner" | "intermediate" | "advanced" | "expert";
+
+export interface SkillsGapReport {
+  employeeId: string;
+  matchedSkills: { skillId: string; employeeLevel: string; requiredLevel: string }[];
+  gaps: { skillId: string; currentLevel: string; requiredLevel: string; severity: "low" | "medium" | "high" }[];
+  learningPath: LearningModule[];
+  teamCoverage: Record<string, Record<string, number>>; // member -> skill -> coverage score
+  recommendations: string[];
+  generatedAt: string;
+}
+
+export interface LearningModule {
+  skillId: string;
+  title: string;
+  order: number;
+  estimatedHours: number;
+  resources: string[];
+}
+
+export interface EmployeeSkill {
+  skillId: string;
+  proficiencyLevel: ProficiencyLevel;
+}
+
+export interface RoleRequirement {
+  skillId: string;
+  requiredLevel: ProficiencyLevel;
+}
+
+// ============================================
 // Connector Health Types (XAF-007)
 // ============================================
 
