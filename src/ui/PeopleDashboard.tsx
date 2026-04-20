@@ -9,6 +9,7 @@
  * - Team Health Scores
  */
 
+import * as React from "react";
 import { usePluginData, usePluginAction, type PluginWidgetProps } from "@paperclipai/plugin-sdk/ui";
 import { useState, useCallback } from "react";
 import type {

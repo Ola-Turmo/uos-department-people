@@ -4,6 +4,7 @@
  * VAL-DEPT-PEOPLE-002: Policy questions are answered with citations, confidence, and escalation
  */
 
+import * as React from "react";
 import { usePluginAction, usePluginData, type PluginWidgetProps } from "@paperclipai/plugin-sdk/ui";
 import { useState, useCallback } from "react";
 
