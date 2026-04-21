@@ -78,6 +78,25 @@ const plugin = definePlugin({
       return summary;
     });
 
+    // Read-only data endpoints used by the dashboard/page surfaces.
+    ctx.data.register("onboarding.getAll", async () => {
+      return { workflows: onboardingService.getAllWorkflows() };
+    });
+
+    ctx.data.register("onboarding.getSummary", async (params) => {
+      const p = (params ?? {}) as unknown as GetOnboardingSummaryParams;
+      return { summary: onboardingService.getSummary(p) };
+    });
+
+    ctx.data.register("policy.getPendingEscalations", async () => {
+      return { escalations: policyService.getPendingEscalations() };
+    });
+
+    ctx.data.register("policy.generateReport", async (params) => {
+      const p = (params ?? {}) as unknown as GetPolicyQuestionsReportParams;
+      return { report: policyService.generateReport(p) };
+    });
+
     // Ping action for testing
     ctx.actions.register("ping", async () => {
       ctx.logger.info("Ping action invoked");

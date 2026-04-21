@@ -451,28 +451,6 @@ function SkillsHeatmap({ workflows }: { workflows: OnboardingWorkflow[] }) {
     },
   }));
 
-  // If no workflows, use sample data
-  const displayMembers = teamMembers.length > 0 ? teamMembers : [
-    {
-      employeeId: "sample-1",
-      employeeName: "Team Member 1",
-      department: "Engineering",
-      skills: { "Onboarding": "expert", "Compliance": "intermediate", "Documentation": "advanced", "Tools Access": "expert", "Team Integration": "intermediate" },
-    },
-    {
-      employeeId: "sample-2",
-      employeeName: "Team Member 2",
-      department: "Product",
-      skills: { "Onboarding": "advanced", "Compliance": "expert", "Documentation": "intermediate", "Tools Access": "advanced", "Team Integration": "expert" },
-    },
-    {
-      employeeId: "sample-3",
-      employeeName: "Team Member 3",
-      department: "Design",
-      skills: { "Onboarding": "intermediate", "Compliance": "beginner", "Documentation": "expert", "Tools Access": "intermediate", "Team Integration": "advanced" },
-    },
-  ];
-
   const skills = ["Onboarding", "Compliance", "Documentation", "Tools Access", "Team Integration"] as const;
 
   return (
@@ -499,52 +477,66 @@ function SkillsHeatmap({ workflows }: { workflows: OnboardingWorkflow[] }) {
       </div>
 
       {/* Heatmap Grid */}
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.7rem" }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: "left", padding: "0.35rem", borderBottom: "2px solid #ddd", minWidth: "100px" }}>
-                Team Member
-              </th>
-              {skills.map((skill) => (
-                <th
-                  key={skill}
-                  style={{ padding: "0.35rem", borderBottom: "2px solid #ddd", textAlign: "center", minWidth: "70px" }}
-                >
-                  {skill}
+      {teamMembers.length === 0 ? (
+        <div
+          style={{
+            padding: "0.85rem",
+            border: "1px dashed #cbd5e1",
+            borderRadius: "6px",
+            color: "#64748b",
+            fontSize: "0.75rem",
+          }}
+        >
+          No onboarding workflows yet. Team skill coverage will appear after real onboarding data exists.
+        </div>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.7rem" }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: "left", padding: "0.35rem", borderBottom: "2px solid #ddd", minWidth: "100px" }}>
+                  Team Member
                 </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {displayMembers.map((member) => (
-              <tr key={member.employeeId}>
-                <td style={{ padding: "0.35rem", borderBottom: "1px solid #eee" }}>
-                  <div style={{ fontWeight: "bold" }}>{member.employeeName}</div>
-                  <div style={{ fontSize: "0.6rem", color: "#666" }}>{member.department}</div>
-                </td>
-                {skills.map((skill) => {
-                  const level = member.skills[skill] || "missing";
-                  return (
-                    <td
-                      key={skill}
-                      style={{
-                        padding: "0.35rem",
-                        borderBottom: "1px solid #eee",
-                        textAlign: "center",
-                        background: getProficiencyColor(level),
-                        color: level === "missing" ? "#999" : "white",
-                      }}
-                    >
-                      {getProficiencyLabel(level)}
-                    </td>
-                  );
-                })}
+                {skills.map((skill) => (
+                  <th
+                    key={skill}
+                    style={{ padding: "0.35rem", borderBottom: "2px solid #ddd", textAlign: "center", minWidth: "70px" }}
+                  >
+                    {skill}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {teamMembers.map((member) => (
+                <tr key={member.employeeId}>
+                  <td style={{ padding: "0.35rem", borderBottom: "1px solid #eee" }}>
+                    <div style={{ fontWeight: "bold" }}>{member.employeeName}</div>
+                    <div style={{ fontSize: "0.6rem", color: "#666" }}>{member.department}</div>
+                  </td>
+                  {skills.map((skill) => {
+                    const level = member.skills[skill] || "missing";
+                    return (
+                      <td
+                        key={skill}
+                        style={{
+                          padding: "0.35rem",
+                          borderBottom: "1px solid #eee",
+                          textAlign: "center",
+                          background: getProficiencyColor(level),
+                          color: level === "missing" ? "#999" : "white",
+                        }}
+                      >
+                        {getProficiencyLabel(level)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -578,20 +570,25 @@ function TeamHealthScores({ workflows }: { workflows: OnboardingWorkflow[] }) {
     engagementScore: stats.total > 0 ? Math.max(0, 100 - stats.blocked * 20 - (100 - stats.avgReadiness) * 0.5) : 0,
   }));
 
-  // If no data, show sample
-  const displayStats = deptStats.length > 0 ? deptStats : [
-    { department: "Engineering", total: 8, ready: 5, blocked: 1, avgReadiness: 75, readinessScore: 62, engagementScore: 78 },
-    { department: "Product", total: 5, ready: 4, blocked: 0, avgReadiness: 82, readinessScore: 80, engagementScore: 90 },
-    { department: "Design", total: 3, ready: 2, blocked: 1, avgReadiness: 65, readinessScore: 66, engagementScore: 65 },
-    { department: "Marketing", total: 4, ready: 3, blocked: 0, avgReadiness: 78, readinessScore: 75, engagementScore: 85 },
-  ];
-
   return (
     <div style={{ border: "1px solid #e0e0e0", borderRadius: "8px", padding: "1rem" }}>
       <h3 style={{ margin: "0 0 1rem 0", fontSize: "1rem" }}>Team Health Scores</h3>
 
-      <div style={{ display: "grid", gap: "0.75rem" }}>
-        {displayStats.map((dept) => (
+      {deptStats.length === 0 ? (
+        <div
+          style={{
+            padding: "0.85rem",
+            border: "1px dashed #cbd5e1",
+            borderRadius: "6px",
+            color: "#64748b",
+            fontSize: "0.75rem",
+          }}
+        >
+          No department readiness data yet. This view activates once onboarding workflows are tracked for real people.
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: "0.75rem" }}>
+          {deptStats.map((dept) => (
           <div
             key={dept.department}
             style={{
@@ -648,8 +645,9 @@ function TeamHealthScores({ workflows }: { workflows: OnboardingWorkflow[] }) {
               </div>
             </div>
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -476,7 +476,7 @@ export function OnboardingWidget(_props: PluginWidgetProps) {
             <div style={{ marginBottom: "1rem", padding: "0.5rem", background: selectedWorkflow.readiness.dayOneReady ? "#e8f5e9" : "#fff3e0", borderRadius: "4px" }}>
               <div style={{ fontWeight: "bold", marginBottom: "0.25rem" }}>Risk Factors:</div>
               {selectedWorkflow.readiness.riskFactors.map((factor, i) => (
-                <div key={i} style={{ fontSize: "0.75rem", color: "#d84315" }}>• {factor}</div>
+                <div key={i} style={{ fontSize: "0.75rem", color: "#d84315" }}>- {factor}</div>
               ))}
             </div>
           )}
@@ -538,7 +538,7 @@ export function OnboardingWidget(_props: PluginWidgetProps) {
 
           {/* Privacy-Safe Notice */}
           <div style={{ marginTop: "1rem", padding: "0.5rem", background: "#e8f5e9", borderRadius: "4px", fontSize: "0.75rem", color: "#2e7d32" }}>
-            ✓ Privacy boundaries active - sensitive case details are protected
+            Privacy boundaries active. Sensitive case details stay protected.
           </div>
         </div>
       )}
@@ -667,7 +667,13 @@ export function PolicyWidget(_props: PluginWidgetProps) {
           <div style={{
             width: `${(report?.averageConfidence ?? 0) * 100}%`,
             height: "100%",
-            background: getConfidenceColor(report?.averageConfidence ?? 0.5 >= 0.7 ? "high" : report?.averageConfidence ?? 0.5 >= 0.4 ? "medium" : "low"),
+            background: getConfidenceColor(
+              (report?.averageConfidence ?? 0) >= 0.7
+                ? "high"
+                : (report?.averageConfidence ?? 0) >= 0.4
+                  ? "medium"
+                  : "low"
+            ),
             transition: "width 0.3s"
           }} />
         </div>
